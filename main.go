@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/timothy-mahoney/wikipedia-demo/logger"
+	"wikipedia-demo/logger"
 )
 
 var tpl *template.Template
