@@ -14,6 +14,8 @@ import (
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/timothy-mahoney/wikipedia-demo/logger"
 )
 
 var tpl *template.Template
@@ -194,15 +196,21 @@ func htmlSafe(str string) template.HTML {
 var err error
 
 func init() {
+	l := logger.Get()
+
+	var err error
+
 	tpl, err = template.New("index.html").Funcs(template.FuncMap{
 		"htmlSafe": htmlSafe,
 	}).ParseFiles("index.html")
 	if err != nil {
-		log.Fatal("Unable to initialize HTML templates")
+		l.Fatal().Err(err).Msg("Unable to initialize HTML templates")
 	}
 }
 
 func main() {
+	l := logger.Get()
+
 	fs := http.FileServer(http.Dir("assets"))
 
 	port := os.Getenv("PORT")
@@ -215,7 +223,11 @@ func main() {
 	mux.Handle("/search", handlerWithError(searchHandler))
 	mux.Handle("/", handlerWithError(indexHandler))
 
-	log.Printf("Starting Wikipedia App Server on port '%s'", port)
+	l.Info().
+		Str("port", port).
+		Msgf("Starting Wikipedia App Server on port '%s'", port)
 
-	log.Fatal(http.ListenAndServe(":"+port, mux))
+	l.Fatal().
+		Err(http.ListenAndServe(":"+port, mux)).
+		Msg("Wikipedia App Server Closed")
 }
