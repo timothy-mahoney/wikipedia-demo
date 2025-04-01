@@ -1,4 +1,4 @@
-module github.com/timothy-mahoney/wikipedia-demo/logger
+module logger
 
 go 1.24.1
 

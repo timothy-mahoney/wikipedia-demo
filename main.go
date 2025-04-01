@@ -115,6 +115,11 @@ func searchWikipedia(
 
 	defer resp.Body.Close()
 
+	l := logger.Get()
+	l.
+		Info().
+		Str("search_query", searchQuery)
+
 	if resp.StatusCode != http.StatusOK {
 		respData, _ := httputil.DumpResponse(resp, true)
 
@@ -189,6 +194,34 @@ func searchHandler(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+func requestLogger(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+
+		l := logger.Get()
+
+		defer func() {
+			l.
+				Info().
+				Str("method", r.Method).
+				Str("url", r.URL.RequestURI()).
+				Str("user_agent", r.UserAgent()).
+				Dur("elapsed_ms", time.Since(start)).
+				Msg("incoming request")
+		}()
+
+		next.ServeHTTP(w, r)
+
+		l.
+			Info().
+			Str("method", r.Method).
+			Str("url", r.URL.RequestURI()).
+			Str("user_agent", r.UserAgent()).
+			Dur("elapsed_ms", time.Since(start)).
+			Msg("incoming request")
+	})
+}
+
 func htmlSafe(str string) template.HTML {
 	return template.HTML(str)
 }
@@ -228,6 +261,6 @@ func main() {
 		Msgf("Starting Wikipedia App Server on port '%s'", port)
 
 	l.Fatal().
-		Err(http.ListenAndServe(":"+port, mux)).
+		Err(http.ListenAndServe(":"+port, requestLogger(mux))).
 		Msg("Wikipedia App Server Closed")
 }
